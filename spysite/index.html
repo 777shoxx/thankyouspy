@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Yuborish</title>
+<style>
+  :root{--bg:#0f1115;--card:#181b22;--line:#2a2f3a;--fg:#e8eaf0;--mut:#8b93a5;--acc:#4f8cff;--ok:#3ecf8e;--err:#ff5d6c}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--fg);font:16px system-ui,sans-serif;padding:16px}
+  .card{width:100%;max-width:560px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+  h1{margin:0 0 14px;font-size:20px}
+  input,textarea{width:100%;background:#10131a;color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;margin-bottom:12px}
+  textarea{min-height:110px;resize:vertical}
+  #drop{border:2px dashed var(--line);border-radius:12px;padding:26px 12px;text-align:center;color:var(--mut);cursor:pointer;transition:.15s;margin-bottom:12px}
+  #drop.over{border-color:var(--acc);color:var(--fg);background:#4f8cff14}
+  ul{list-style:none;margin:0 0 12px;padding:0}
+  li{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;font-size:14px}
+  li .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  li .s{color:var(--mut);white-space:nowrap}
+  li.ok .s{color:var(--ok)} li.err .s{color:var(--err)}
+  li button{background:none;border:0;color:var(--err);cursor:pointer;font-size:16px}
+  #send{width:100%;padding:12px;border:0;border-radius:10px;background:var(--acc);color:#fff;font:600 16px system-ui;cursor:pointer}
+  #send:disabled{opacity:.5;cursor:not-allowed}
+  #msg{margin-top:10px;font-size:14px;color:var(--mut);min-height:20px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>📨 Menga yuborish</h1>
+  <input id="sender" placeholder="Ismingiz (ixtiyoriy)" maxlength="60">
+  <textarea id="text" placeholder="Matn yozing..."></textarea>
+  <div id="drop">📎 Fayllarni shu yerga tashlang, bosing yoki Ctrl+V bilan qo'ying<br><small>rasm, video, hujjat — har biri 5 MB gacha</small></div>
+  <input id="file" type="file" multiple hidden>
+  <ul id="list"></ul>
+  <button id="send">Yuborish</button>
+  <div id="msg"></div>
+</div>
+
+<script>
+const MAX = 5.5 * 1024 * 1024;
+const $ = id => document.getElementById(id);
+let files = [];
+
+const fmt = b => b > 1048576 ? (b/1048576).toFixed(1)+' MB' : Math.ceil(b/1024)+' KB';
+
+function render(){
+  $('list').innerHTML = '';
+  files.forEach((f,i)=>{
+    const li = document.createElement('li');
+    li.id = 'f'+i;
+    li.innerHTML = `<span class="n"></span><span class="s">${fmt(f.size)}</span><button title="Olib tashlash">✕</button>`;
+    li.querySelector('.n').textContent = f.name;
+    li.querySelector('button').onclick = ()=>{ files.splice(i,1); render(); };
+    $('list').appendChild(li);
+  });
+}
+function add(list){
+  for (const f of list){
+    if (f.size > MAX){ $('msg').textContent = `"${f.name}" juda katta (${fmt(f.size)}). Maks: 5 MB.`; continue; }
+    files.push(f);
+  }
+  render();
+}
+
+const drop = $('drop');
+drop.onclick = ()=> $('file').click();
+$('file').onchange = e => { add(e.target.files); e.target.value=''; };
+['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));
+['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));
+drop.addEventListener('drop', e => add(e.dataTransfer.files));
+window.addEventListener('dragover', e=>e.preventDefault());
+window.addEventListener('drop', e=>{ e.preventDefault(); if(!drop.contains(e.target)) add(e.dataTransfer.files); });
+window.addEventListener('paste', e => add([...e.clipboardData.files]));
+
+async function post(headers, body){
+  const r = await fetch('/.netlify/functions/send', { method:'POST', headers, body });
+  if (!r.ok) throw new Error(await r.text() || r.status);
+}
+
+$('send').onclick = async () => {
+  const text = $('text').value.trim();
+  const sender = $('sender').value.trim();
+  if (!text && !files.length){ $('msg').textContent = 'Matn yoki fayl qo\'shing.'; return; }
+  $('send').disabled = true; $('msg').textContent = 'Yuborilmoqda...';
+  const h = { 'x-sender': encodeURIComponent(sender) };
+  let failed = 0;
+  try {
+    if (text) await post({ ...h, 'x-kind':'text', 'content-type':'text/plain; charset=utf-8' }, text);
+    $('text').value = '';
+  } catch(e){ failed++; $('msg').textContent = 'Matn xatosi: '+e.message; }
+
+  for (let i=0;i<files.length;i++){
+    const li = $('f'+i), s = li.querySelector('.s');
+    s.textContent = '⏳';
+    try {
+      await post({ ...h, 'x-kind':'file', 'x-filename': encodeURIComponent(files[i].name),
+                   'content-type': files[i].type || 'application/octet-stream' }, files[i]);
+      li.classList.add('ok'); s.textContent = '✓';
+    } catch(e){ failed++; li.classList.add('err'); s.textContent = '✗'; }
+  }
+  $('msg').textContent = failed ? `${failed} ta xato bo'ldi.` : '✅ Yuborildi!';
+  if (!failed){ files = []; setTimeout(render, 1200); }
+  $('send').disabled = false;
+};
+</script>
+</body>
+</html>
