@@ -7,6 +7,7 @@
 <style>
   :root{color-scheme:dark;--bg:#070b09;--panel:#0d1410;--panel-2:#090f0c;--line:#1d3326;--fg:#e2f5e8;--mut:#82988a;--acc:#56f287;--ok:#56f287;--err:#ff657a}
   *{box-sizing:border-box}
+  [hidden]{display:none!important}
   body{margin:0;min-height:100vh;display:grid;place-items:center;padding:32px 16px;background-color:var(--bg);background-image:linear-gradient(rgba(86,242,135,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(86,242,135,.035) 1px,transparent 1px),radial-gradient(ellipse at 50% 0%,#12351f 0,transparent 58%);background-size:36px 36px,36px 36px,auto;color:var(--fg);font:15px/1.5 "Segoe UI",system-ui,sans-serif}
   .card{width:100%;max-width:790px;position:relative;overflow:hidden;background:linear-gradient(145deg,rgba(15,25,19,.98),rgba(9,15,12,.98));border:1px solid var(--line);border-radius:8px;padding:clamp(22px,5vw,36px);box-shadow:0 24px 80px #0009,0 0 44px #39e8780a}
   .card:before{content:"";position:absolute;inset:0 0 auto;height:2px;background:linear-gradient(90deg,transparent,var(--acc),transparent);opacity:.8}
@@ -45,17 +46,55 @@
   #send:disabled{opacity:.5;cursor:not-allowed}
   #msg{margin-top:12px;color:var(--mut);font:12px Consolas,"Courier New",monospace;min-height:18px}
   .footnote{display:flex;justify-content:space-between;gap:12px;margin-top:23px;padding-top:14px;border-top:1px solid #1b2b20;color:#617567;font:10px Consolas,"Courier New",monospace;letter-spacing:.08em;text-transform:uppercase}
+
+  /* ===== Parol darvozasi ===== */
+  #gate{display:grid;place-items:center;width:100%}
+  #pressBtn{padding:16px 44px;background:#000;color:#fff;border:1px solid #3a3a3a;border-radius:6px;font:700 15px Consolas,"Courier New",monospace;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;transition:border-color .18s,box-shadow .18s}
+  #pressBtn:hover,#pressBtn:focus-visible{outline:none;border-color:#fff;box-shadow:0 0 22px #ffffff22}
+  #modal{position:fixed;inset:0;background:#000c;display:grid;place-items:center;padding:16px;z-index:10}
+  .box{width:100%;max-width:340px;background:#050505;border:1px solid #2a2a2a;border-radius:8px;padding:24px}
+  .box h3{margin:0 0 14px;font:700 15px Consolas,"Courier New",monospace;color:#fff;letter-spacing:.06em}
+  .box input{margin-bottom:10px;text-align:center;letter-spacing:.4em;font-size:18px}
+  .row{display:flex;gap:8px}
+  .row button{flex:1;padding:11px;border-radius:4px;border:1px solid #3a3a3a;background:#000;color:#fff;font:700 13px Consolas,"Courier New",monospace;cursor:pointer}
+  .row button:hover:not(:disabled){border-color:#fff}
+  .row button:disabled,.box input:disabled{opacity:.4;cursor:not-allowed}
+  #pErr{min-height:20px;margin-top:10px;color:var(--err);font:12px Consolas,"Courier New",monospace}
+  .secret{margin:0 0 20px;padding:18px;border:1px solid var(--line);border-radius:5px;background:#090f0caa;color:var(--fg);font:15px/1.6 Consolas,"Courier New",monospace;white-space:pre-wrap;word-break:break-word}
+
   @media(max-width:620px){body{padding:18px 12px}.content-grid{grid-template-columns:1fr}.panel{padding:15px}.topline{margin-bottom:24px}}
   @media(max-width:420px){.footnote{font-size:9px}}
   @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important}}
 </style>
 </head>
 <body>
-<div class="card">
+
+<!-- 1-oyna: qora PRESS tugmasi -->
+<div id="gate">
+  <button id="pressBtn">PRESS</button>
+</div>
+
+<div id="modal" hidden>
+  <form class="box" id="pForm" autocomplete="off">
+    <h3>PAROL</h3>
+    <input id="pInput" type="password" maxlength="128" placeholder="Parolni kiriting" aria-label="Parol">
+    <div class="row">
+      <button type="submit" id="pOk">KIRISH</button>
+      <button type="button" id="pCancel">BEKOR</button>
+    </div>
+    <div id="pErr" role="alert"></div>
+  </form>
+</div>
+
+<!-- 2-oyna: parol to'g'ri bo'lsa shu ochiladi -->
+<div class="card" id="app" hidden>
   <div class="topline">
     <div class="brand"><span class="brand-mark"></span> SECURE DROP / 01</div>
     <div class="status">Tizim faol</div>
   </div>
+
+  <div class="secret"></div>
+
   <h1><span>&gt;_</span> Ma'lumot yuborish</h1>
   <p class="intro">Xabar va fayllaringizni xavfsiz kanal orqali uzating.</p>
   <div class="content-grid">
@@ -71,7 +110,7 @@
       <div id="drop" role="button" tabindex="0" aria-label="Fayllarni tanlang yoki shu yerga tashlang">
         <span class="drop-icon">[ + ]</span>
         Fayllarni shu yerga tashlang yoki tanlash uchun bosing
-        <small>Yoki Ctrl+V orqali joylang · har biri 5 MB gacha</small>
+        <small>Yoki Ctrl+V orqali joylang · har biri 4 MB gacha</small>
       </div>
       <input id="file" type="file" multiple hidden>
       <ul id="list"></ul>
@@ -83,7 +122,46 @@
 </div>
 
 <script>
-const MAX = 5.5 * 1024 * 1024;
+/* ===== Parol darvozasi ===== */
+const gate = document.getElementById('gate'), modal = document.getElementById('modal'),
+      app = document.getElementById('app'), pInput = document.getElementById('pInput'),
+      pErr = document.getElementById('pErr'), pOk = document.getElementById('pOk');
+
+document.getElementById('pressBtn').onclick = () => {
+  modal.hidden = false; pInput.value = ''; pErr.textContent = '';
+  pInput.focus();
+};
+document.getElementById('pCancel').onclick = () => { modal.hidden = true; };
+
+document.getElementById('pForm').onsubmit = async e => {
+  e.preventDefault();
+  pOk.disabled = true;
+  pErr.textContent = 'Tekshirilmoqda...';
+  try {
+    const response = await fetch('/.netlify/functions/auth', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ password: pInput.value }),
+    });
+    if (response.status === 401) {
+      pErr.textContent = 'Parol noto\'g\'ri.';
+      pInput.value = '';
+      pInput.focus();
+      return;
+    }
+    if (!response.ok) throw new Error(await response.text() || response.status);
+    const data = await response.json();
+    document.querySelector('.secret').textContent = data.message;
+    gate.hidden = true; modal.hidden = true; app.hidden = false;
+  } catch (error) {
+    pErr.textContent = 'Kirish amalga oshmadi: ' + error.message;
+  } finally {
+    pOk.disabled = false;
+  }
+};
+
+/* ===== Yuborish qismi ===== */
+const MAX = 4 * 1024 * 1024;
 const $ = id => document.getElementById(id);
 let files = [];
 
@@ -102,7 +180,7 @@ function render(){
 }
 function add(list){
   for (const f of list){
-    if (f.size > MAX){ $('msg').textContent = `"${f.name}" juda katta (${fmt(f.size)}). Maks: 5 MB.`; continue; }
+    if (f.size > MAX){ $('msg').textContent = `"${f.name}" juda katta (${fmt(f.size)}). Maks: 4 MB.`; continue; }
     files.push(f);
   }
   render();
@@ -117,7 +195,7 @@ $('file').onchange = e => { add(e.target.files); e.target.value=''; };
 drop.addEventListener('drop', e => add(e.dataTransfer.files));
 window.addEventListener('dragover', e=>e.preventDefault());
 window.addEventListener('drop', e=>{ e.preventDefault(); if(!drop.contains(e.target)) add(e.dataTransfer.files); });
-window.addEventListener('paste', e => add([...e.clipboardData.files]));
+window.addEventListener('paste', e => { if (!app.hidden) add([...e.clipboardData.files]); });
 
 async function post(headers, body){
   const r = await fetch('/.netlify/functions/send', { method:'POST', headers, body });
