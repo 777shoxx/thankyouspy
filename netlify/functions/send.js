@@ -1,14 +1,8 @@
 // Brauzerdan kelgan matn/fayllarni Telegram botga yuboradi.
 // Netlify > Site settings > Environment variables: BOT_TOKEN, CHAT_ID
 
-const { isAuthenticated } = require('../auth');
-
 exports.handler = async (event) => {
   if (event.httpMethod !== 'POST') return { statusCode: 405, body: 'Method not allowed' };
-
-  const { AUTH_SECRET } = process.env;
-  if (!AUTH_SECRET) return { statusCode: 500, body: 'AUTH_SECRET sozlanmagan' };
-  if (!isAuthenticated(event, AUTH_SECRET)) return { statusCode: 401, body: 'Avval tizimga kiring' };
 
   const { BOT_TOKEN, CHAT_ID } = process.env;
   if (!BOT_TOKEN || !CHAT_ID) return { statusCode: 500, body: 'BOT_TOKEN/CHAT_ID sozlanmagan' };

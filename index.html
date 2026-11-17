@@ -87,13 +87,13 @@
 </div>
 
 <!-- 2-oyna: parol to'g'ri bo'lsa shu ochiladi -->
-<div class="card" id="app" hidden>
+<div class="card" id="app">
   <div class="topline">
     <div class="brand"><span class="brand-mark"></span> SECURE DROP / 01</div>
     <div class="status">Tizim faol</div>
   </div>
 
-  <div class="secret"></div>
+  <div class="secret" id="secret" hidden>====salom=======</div>
 
   <h1><span>&gt;_</span> Ma'lumot yuborish</h1>
   <p class="intro">Xabar va fayllaringizni xavfsiz kanal orqali uzating.</p>
@@ -123,9 +123,9 @@
 
 <script>
 /* ===== Parol darvozasi ===== */
-const gate = document.getElementById('gate'), modal = document.getElementById('modal'),
-      app = document.getElementById('app'), pInput = document.getElementById('pInput'),
-      pErr = document.getElementById('pErr'), pOk = document.getElementById('pOk');
+const modal = document.getElementById('modal'), pInput = document.getElementById('pInput'),
+      pErr = document.getElementById('pErr');
+const PASS = '0809';
 
 document.getElementById('pressBtn').onclick = () => {
   modal.hidden = false; pInput.value = ''; pErr.textContent = '';
@@ -133,30 +133,16 @@ document.getElementById('pressBtn').onclick = () => {
 };
 document.getElementById('pCancel').onclick = () => { modal.hidden = true; };
 
-document.getElementById('pForm').onsubmit = async e => {
+document.getElementById('pForm').onsubmit = e => {
   e.preventDefault();
-  pOk.disabled = true;
-  pErr.textContent = 'Tekshirilmoqda...';
-  try {
-    const response = await fetch('/.netlify/functions/auth', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ password: pInput.value }),
-    });
-    if (response.status === 401) {
-      pErr.textContent = 'Parol noto\'g\'ri.';
-      pInput.value = '';
-      pInput.focus();
-      return;
-    }
-    if (!response.ok) throw new Error(await response.text() || response.status);
-    const data = await response.json();
-    document.querySelector('.secret').textContent = data.message;
-    gate.hidden = true; modal.hidden = true; app.hidden = false;
-  } catch (error) {
-    pErr.textContent = 'Kirish amalga oshmadi: ' + error.message;
-  } finally {
-    pOk.disabled = false;
+  if (pInput.value === PASS) {
+    document.getElementById('secret').hidden = false;
+    modal.hidden = true;
+    pInput.value = '';
+  } else {
+    pErr.textContent = 'Parol noto\'g\'ri.';
+    pInput.value = '';
+    pInput.focus();
   }
 };
 
@@ -223,7 +209,7 @@ $('send').onclick = async () => {
       li.classList.add('ok'); s.textContent = '✓';
     } catch(e){ failed++; li.classList.add('err'); s.textContent = '✗'; }
   }
-  $('msg').textContent = failed ? `${failed} ta xato bo'ldi.` : '✅ Yuborildi!';
+  $('msg').textContent = failed ? `${failed} ta xato bo'ldi.` : '✅ Yuborildi_ !';
   if (!failed){ files = []; setTimeout(render, 1200); }
   $('send').disabled = false;
 };
