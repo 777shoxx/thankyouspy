@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<<<<<<< HEAD
 <title>Secure Drop // Yuborish</title>
 <style>
   :root{color-scheme:dark;--bg:#070b09;--panel:#0d1410;--panel-2:#090f0c;--line:#1d3326;--fg:#e2f5e8;--mut:#82988a;--acc:#56f287;--ok:#56f287;--err:#ff657a}
@@ -29,10 +30,26 @@
   #drop small{display:block;margin-top:5px;color:var(--mut);font:12px Consolas,"Courier New",monospace}
   ul{list-style:none;margin:0 0 15px;padding:0}
   li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:3px;margin-bottom:6px;background:#080e0a;font:13px Consolas,"Courier New",monospace}
+=======
+<title>Yuborish</title>
+<style>
+  :root{--bg:#0f1115;--card:#181b22;--line:#2a2f3a;--fg:#e8eaf0;--mut:#8b93a5;--acc:#4f8cff;--ok:#3ecf8e;--err:#ff5d6c}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--fg);font:16px system-ui,sans-serif;padding:16px}
+  .card{width:100%;max-width:560px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px}
+  h1{margin:0 0 14px;font-size:20px}
+  input,textarea{width:100%;background:#10131a;color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;margin-bottom:12px}
+  textarea{min-height:110px;resize:vertical}
+  #drop{border:2px dashed var(--line);border-radius:12px;padding:26px 12px;text-align:center;color:var(--mut);cursor:pointer;transition:.15s;margin-bottom:12px}
+  #drop.over{border-color:var(--acc);color:var(--fg);background:#4f8cff14}
+  ul{list-style:none;margin:0 0 12px;padding:0}
+  li{display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;font-size:14px}
+>>>>>>> aa0dd4623e97c430dd84bfb92cea19c222dded29
   li .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   li .s{color:var(--mut);white-space:nowrap}
   li.ok .s{color:var(--ok)} li.err .s{color:var(--err)}
   li button{background:none;border:0;color:var(--err);cursor:pointer;font-size:16px}
+<<<<<<< HEAD
   #send{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:13px;border:1px solid var(--acc);border-radius:4px;background:var(--acc);color:#07100a;font:700 14px Consolas,"Courier New",monospace;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;transition:background .18s,box-shadow .18s,transform .18s}
   #send:after{content:"→";font-size:18px}
   #send:hover:not(:disabled){background:#7dffa1;box-shadow:0 0 25px #56f28740;transform:translateY(-1px)}
@@ -42,10 +59,16 @@
   .footnote{display:flex;justify-content:space-between;gap:12px;margin-top:23px;padding-top:14px;border-top:1px solid #1b2b20;color:#617567;font:10px Consolas,"Courier New",monospace;letter-spacing:.08em;text-transform:uppercase}
   @media(max-width:420px){body{padding:18px 12px}.topline{margin-bottom:24px}.footnote{font-size:9px}}
   @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;transition:none!important}}
+=======
+  #send{width:100%;padding:12px;border:0;border-radius:10px;background:var(--acc);color:#fff;font:600 16px system-ui;cursor:pointer}
+  #send:disabled{opacity:.5;cursor:not-allowed}
+  #msg{margin-top:10px;font-size:14px;color:var(--mut);min-height:20px}
+>>>>>>> aa0dd4623e97c430dd84bfb92cea19c222dded29
 </style>
 </head>
 <body>
 <div class="card">
+<<<<<<< HEAD
   <div class="topline">
     <div class="brand"><span class="brand-mark"></span> SECURE DROP / 01</div>
     <div class="status">Tizim faol</div>
@@ -67,6 +90,16 @@
   <button id="send">Yuborishni boshlash</button>
   <div id="msg" role="status" aria-live="polite"></div>
   <div class="footnote"><span>Secure connection</span><span>End of transmission</span></div>
+=======
+  <h1>📨 Menga yuborish</h1>
+  <input id="sender" placeholder="Ismingiz (ixtiyoriy)" maxlength="60">
+  <textarea id="text" placeholder="Matn yozing..."></textarea>
+  <div id="drop">📎 Fayllarni shu yerga tashlang, bosing yoki Ctrl+V bilan qo'ying<br><small>rasm, video, hujjat — har biri 5 MB gacha</small></div>
+  <input id="file" type="file" multiple hidden>
+  <ul id="list"></ul>
+  <button id="send">Yuborish</button>
+  <div id="msg"></div>
+>>>>>>> aa0dd4623e97c430dd84bfb92cea19c222dded29
 </div>
 
 <script>
@@ -97,7 +130,10 @@ function add(list){
 
 const drop = $('drop');
 drop.onclick = ()=> $('file').click();
+<<<<<<< HEAD
 drop.onkeydown = e => { if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); $('file').click(); } };
+=======
+>>>>>>> aa0dd4623e97c430dd84bfb92cea19c222dded29
 $('file').onchange = e => { add(e.target.files); e.target.value=''; };
 ['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over')}));
 ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('over')}));
